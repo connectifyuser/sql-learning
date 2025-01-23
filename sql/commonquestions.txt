@@ -1,0 +1,125 @@
+Based on the provided schema for the **Customers**, **Orders**, and **Shippings** tables, here are potential **SQL interview questions** to assess understanding of relational databases, querying, and data relationships:
+
+---
+
+### **Basic Questions**
+1. **Describe the relationships between the three tables.**
+   - Expected Answer: 
+     - `Customers` is related to `Orders` via `customer_id`.
+     - `Shippings` is related to `Customers` via `customer` (assuming `customer` maps to `customer_id`).
+
+2. **Write a query to retrieve the names and ages of customers who have placed orders.**
+   ```sql
+   SELECT c.first_name, c.last_name, c.age
+   FROM Customers c
+   INNER JOIN Orders o ON c.customer_id = o.customer_id;
+   ```
+
+3. **List all customers who have not placed any orders.**
+   ```sql
+   SELECT c.first_name, c.last_name
+   FROM Customers c
+   LEFT JOIN Orders o ON c.customer_id = o.customer_id
+   WHERE o.order_id IS NULL;
+   ```
+
+4. **Write a query to count the total number of orders for each customer.**
+   ```sql
+   SELECT c.first_name, c.last_name, COUNT(o.order_id) AS total_orders
+   FROM Customers c
+   LEFT JOIN Orders o ON c.customer_id = o.customer_id
+   GROUP BY c.customer_id, c.first_name, c.last_name;
+   ```
+
+---
+
+### **Intermediate Questions**
+5. **Find the customers who have spent more than $1000 in total.**
+   ```sql
+   SELECT c.first_name, c.last_name, SUM(o.amount) AS total_spent
+   FROM Customers c
+   INNER JOIN Orders o ON c.customer_id = o.customer_id
+   GROUP BY c.customer_id, c.first_name, c.last_name
+   HAVING SUM(o.amount) > 1000;
+   ```
+
+6. **Retrieve the second most expensive order across all customers.**
+   ```sql
+   SELECT item, amount
+   FROM Orders
+   ORDER BY amount DESC
+   LIMIT 1 OFFSET 1;
+   ```
+
+7. **Write a query to find customers who have shipped items with a specific status (e.g., status = 1).**
+   ```sql
+   SELECT DISTINCT c.first_name, c.last_name
+   FROM Customers c
+   INNER JOIN Shippings s ON c.customer_id = s.customer
+   WHERE s.status = 1;
+   ```
+
+8. **Get the total shipping count for each customer.**
+   ```sql
+   SELECT c.first_name, c.last_name, COUNT(s.shipping_id) AS shipping_count
+   FROM Customers c
+   LEFT JOIN Shippings s ON c.customer_id = s.customer
+   GROUP BY c.customer_id, c.first_name, c.last_name;
+   ```
+
+---
+
+### **Advanced Questions**
+9. **Find customers who have placed an order but have no associated shipping records.**
+   ```sql
+   SELECT DISTINCT c.first_name, c.last_name
+   FROM Customers c
+   INNER JOIN Orders o ON c.customer_id = o.customer_id
+   LEFT JOIN Shippings s ON c.customer_id = s.customer
+   WHERE s.shipping_id IS NULL;
+   ```
+
+10. **Write a query to get the most common shipping status for each customer.**
+    ```sql
+    SELECT c.first_name, c.last_name, s.status, COUNT(s.status) AS status_count
+    FROM Customers c
+    INNER JOIN Shippings s ON c.customer_id = s.customer
+    GROUP BY c.customer_id, c.first_name, c.last_name, s.status
+    ORDER BY c.customer_id, status_count DESC;
+    ```
+
+11. **What indexing strategies would you use for optimizing queries on these tables?**
+    - Suggested Indexes:
+      - Index on `Customers.customer_id` for joins with `Orders` and `Shippings`.
+      - Index on `Orders.amount` for range queries or sorting by amount.
+      - Index on `Shippings.status` for filtering by shipping status.
+
+---
+
+### **Scenario-Based Questions**
+12. **How would you ensure referential integrity between these tables?**
+    - Expected Answer: Use foreign keys.
+      - `Orders.customer_id` → `Customers.customer_id`.
+      - `Shippings.customer` → `Customers.customer_id`.
+
+13. **If the `status` in the `Shippings` table represents numeric codes, how would you join another table that defines their meaning?**
+    - Example Answer: Assume a `StatusCodes` table exists with `status_id` and `description` columns. Join it as:
+      ```sql
+      SELECT c.first_name, c.last_name, sc.description AS shipping_status
+      FROM Customers c
+      INNER JOIN Shippings s ON c.customer_id = s.customer
+      INNER JOIN StatusCodes sc ON s.status = sc.status_id;
+      ```
+
+14. **Explain how you can handle duplicate records in the `Orders` table.**
+    - Suggested Solutions:
+      - Use `DISTINCT` in queries.
+      - Create a unique constraint on relevant columns.
+
+15. **Design a query to retrieve customers who placed orders for items starting with the letter "A".**
+    ```sql
+    SELECT DISTINCT c.first_name, c.last_name
+    FROM Customers c
+    INNER JOIN Orders o ON c.customer_id = o.customer_id
+    WHERE o.item LIKE 'A%';
+    ```
